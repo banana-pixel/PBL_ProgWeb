@@ -41,6 +41,12 @@ $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
           <div class="text-truncate" data-i18n="Master Kategori">Master Kategori</div>
         </a>
       </li>
+      <li class="menu-item <?php echo ($current_page == 'manajemen_mahasiswa.php') ? 'active' : ''; ?>">
+        <a href="manajemen_mahasiswa.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-user"></i>
+          <div class="text-truncate" data-i18n="Master Mahasiswa">Master Mahasiswa</div>
+        </a>
+      </li>
     <?php else: ?>
       <li class="menu-item <?php echo ($current_page == 'dashboard_mahasiswa.php') ? 'active' : ''; ?>">
         <a href="dashboard_mahasiswa.php" class="menu-link">

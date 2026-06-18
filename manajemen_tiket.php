@@ -110,6 +110,7 @@ $result = mysqli_query($koneksi, $query);
                         <option value="Pending" <?php echo ($filter_status === 'Pending') ? 'selected' : ''; ?>>Pending</option>
                         <option value="On Progress" <?php echo ($filter_status === 'On Progress') ? 'selected' : ''; ?>>On Progress</option>
                         <option value="Resolve" <?php echo ($filter_status === 'Resolve') ? 'selected' : ''; ?>>Resolve</option>
+                        <option value="Dibatalkan" <?php echo ($filter_status === 'Dibatalkan') ? 'selected' : ''; ?>>Dibatalkan</option>
                       </select>
                     </div>
                     <div class="col-md-2">
@@ -148,6 +149,8 @@ $result = mysqli_query($koneksi, $query);
                                 $badge_class = 'bg-label-warning';
                             } elseif (strcasecmp($status, 'resolve') == 0) {
                                 $badge_class = 'bg-label-success';
+                            } elseif (strcasecmp($status, 'dibatalkan') == 0) {
+                                $badge_class = 'bg-label-secondary';
                             }
                           ?>
                           <tr>
@@ -182,6 +185,8 @@ $result = mysqli_query($koneksi, $query);
                                   <button type="button" class="btn btn-sm btn-success btn-resolve" data-bs-toggle="modal" data-bs-target="#resolveModal" data-id="<?php echo htmlspecialchars($row['id_pengaduan']); ?>">Selesaikan</button>
                                 <?php elseif (strcasecmp($status, 'resolve') == 0): ?>
                                   <span class="text-muted small">Selesai</span>
+                                <?php elseif (strcasecmp($status, 'dibatalkan') == 0): ?>
+                                  <span class="text-muted small">Dibatalkan</span>
                                 <?php endif; ?>
                               </div>
 
@@ -220,6 +225,9 @@ $result = mysqli_query($koneksi, $query);
 
                                       <!-- Detail Keluhan -->
                                       <div class="mb-3">
+                                        <h6 class="fw-semibold mb-1"><i class="bx bx-map me-1 text-primary"></i>Lokasi Spesifik:</h6>
+                                        <p class="text-muted mb-2"><?php echo htmlspecialchars($row['lokasi_spesifik']); ?></p>
+
                                         <h6 class="fw-semibold mb-1"><i class="bx bx-detail me-1 text-primary"></i>Detail Keluhan:</h6>
                                         <p class="text-muted mb-2" style="white-space: pre-wrap;"><?php echo htmlspecialchars($row['detail_keluhan']); ?></p>
                                         <?php if (!empty($row['foto_pendukung'])): ?>

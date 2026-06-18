@@ -65,7 +65,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
     }
 }
 
-$query_kategori = "SELECT * FROM Kategori ORDER BY id_kategori ASC";
+$query_kategori = "SELECT Kategori.*, AVG(Pengaduan.rating) as rata_rating FROM Kategori LEFT JOIN Pengaduan ON Kategori.id_kategori = Pengaduan.id_kategori AND Pengaduan.status = 'Resolve' GROUP BY Kategori.id_kategori";
 $result_kategori = mysqli_query($koneksi, $query_kategori);
 ?>
 <!doctype html>
@@ -180,6 +180,7 @@ $result_kategori = mysqli_query($koneksi, $query_kategori);
                       <tr>
                         <th>ID Kategori</th>
                         <th>Nama Kategori</th>
+                        <th>Rata-rata Rating</th>
                         <th>Aksi</th>
                       </tr>
                     </thead>
@@ -189,6 +190,16 @@ $result_kategori = mysqli_query($koneksi, $query_kategori);
                           <tr>
                             <td><strong><?php echo htmlspecialchars($row['id_kategori']); ?></strong></td>
                             <td><?php echo htmlspecialchars($row['nama_kategori']); ?></td>
+                            <td>
+                              <?php
+                              $rata_rating = $row['rata_rating'];
+                              if (is_null($rata_rating)) {
+                                  echo "Belum ada penilaian";
+                              } else {
+                                  echo number_format((float)$rata_rating, 1) . " ⭐";
+                              }
+                              ?>
+                            </td>
                             <td>
                               <a 
                                 href="admin_kategori.php?action=delete&id=<?php echo urlencode($row['id_kategori']); ?>" 
@@ -201,7 +212,7 @@ $result_kategori = mysqli_query($koneksi, $query_kategori);
                         <?php endwhile; ?>
                       <?php else: ?>
                         <tr>
-                          <td colspan="3" class="text-center text-muted py-4">Belum ada data kategori.</td>
+                          <td colspan="4" class="text-center text-muted py-4">Belum ada data kategori.</td>
                         </tr>
                       <?php endif; ?>
                     </tbody>

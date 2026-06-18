@@ -106,6 +106,8 @@ $result = mysqli_query($koneksi, $query);
                                 $badge_class = 'bg-label-warning';
                             } elseif (strcasecmp($status, 'resolve') == 0) {
                                 $badge_class = 'bg-label-success';
+                            } elseif (strcasecmp($status, 'dibatalkan') == 0) {
+                                $badge_class = 'bg-label-secondary';
                             }
                           ?>
                           <tr>
@@ -121,6 +123,11 @@ $result = mysqli_query($koneksi, $query);
                               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
                                 <i class="bx bx-time-five me-1"></i> Lacak Tiket
                               </button>
+                              <?php if (strcasecmp($status, 'pending') == 0): ?>
+                                <a href="proses_batal.php?id=<?php echo urlencode($row['id_pengaduan']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin membatalkan laporan ini?')">
+                                  Batalkan
+                                </a>
+                              <?php endif; ?>
 
                               <!-- Modal Detail & Timeline -->
                               <div class="modal fade" id="modalDetail<?php echo $row['id_pengaduan']; ?>" tabindex="-1" aria-hidden="true">
@@ -136,6 +143,9 @@ $result = mysqli_query($koneksi, $query);
                                       
                                       <!-- Detail Info Singkat -->
                                       <div class="mb-4">
+                                        <h6 class="fw-semibold mb-1">Lokasi Spesifik:</h6>
+                                        <p class="text-muted mb-2"><?php echo htmlspecialchars($row['lokasi_spesifik']); ?></p>
+                                        
                                         <h6 class="fw-semibold mb-1">Detail Keluhan:</h6>
                                         <p class="text-muted mb-2"><?php echo nl2br(htmlspecialchars($row['detail_keluhan'])); ?></p>
                                         <?php if (!empty($row['foto_pendukung'])): ?>

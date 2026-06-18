@@ -8,6 +8,10 @@ include 'koneksi.php';
 
 $nrp = $_SESSION['nrp'];
 
+$query_mhs = mysqli_query($koneksi, "SELECT status_akademik FROM Mahasiswa WHERE nrp = '$nrp'");
+$row_mhs = mysqli_fetch_assoc($query_mhs);
+$status_akademik = $row_mhs['status_akademik'] ?? 'Aktif';
+
 $query_kategori = mysqli_query($koneksi, "SELECT * FROM Kategori ORDER BY nama_kategori ASC");
 ?>
 <!doctype html>
@@ -90,43 +94,54 @@ $query_kategori = mysqli_query($koneksi, "SELECT * FROM Kategori ORDER BY nama_k
               <p class="text-muted mb-4">Laporkan kendala fasilitas atau pelayanan yang Anda alami.</p>
               
               <!-- Form Pengaduan Card -->
-              <div class="card mb-4">
-                <h5 class="card-header">Form Pengaduan Baru</h5>
-                <div class="card-body">
-                  <form action="proses_pengaduan.php" method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                      <label for="kategori" class="form-label">Kategori</label>
-                      <select class="form-select" id="kategori" name="kategori" required>
-                        <option value="" selected disabled>Pilih Kategori Keluhan</option>
-                        <?php if (mysqli_num_rows($query_kategori) > 0): ?>
-                          <?php while ($row_kat = mysqli_fetch_assoc($query_kategori)): ?>
-                            <option value="<?php echo htmlspecialchars($row_kat['id_kategori']); ?>">
-                              <?php echo htmlspecialchars($row_kat['nama_kategori']); ?>
-                            </option>
-                          <?php endwhile; ?>
-                        <?php else: ?>
-                          <option value="1">Fasilitas</option>
-                          <option value="2">Akademik</option>
-                          <option value="3">Keamanan</option>
-                        <?php endif; ?>
-                      </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                      <label for="detail_keluhan" class="form-label">Detail Keluhan</label>
-                      <textarea class="form-control" id="detail_keluhan" name="detail_keluhan" rows="4" placeholder="Tuliskan secara lengkap detail keluhan Anda di sini..." required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                      <label for="foto" class="form-label">Foto Pendukung</label>
-                      <input class="form-control" type="file" id="foto" name="foto_pendukung" accept="image/*" />
-                      <div class="form-text text-muted">Format file yang diperbolehkan: JPG, JPEG, PNG.</div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">Kirim Pengaduan</button>
-                  </form>
+              <?php if ($status_akademik !== 'Aktif'): ?>
+                <div class="alert alert-danger" role="alert">
+                  Akses ditolak. Status akademik Anda tidak aktif. Silakan hubungi bagian administrasi.
                 </div>
-              </div>
+              <?php else: ?>
+                <div class="card mb-4">
+                  <h5 class="card-header">Form Pengaduan Baru</h5>
+                  <div class="card-body">
+                    <form action="proses_pengaduan.php" method="POST" enctype="multipart/form-data">
+                      <div class="mb-3">
+                        <label for="kategori" class="form-label">Kategori</label>
+                        <select class="form-select" id="kategori" name="kategori" required>
+                          <option value="" selected disabled>Pilih Kategori Keluhan</option>
+                          <?php if (mysqli_num_rows($query_kategori) > 0): ?>
+                            <?php while ($row_kat = mysqli_fetch_assoc($query_kategori)): ?>
+                              <option value="<?php echo htmlspecialchars($row_kat['id_kategori']); ?>">
+                                <?php echo htmlspecialchars($row_kat['nama_kategori']); ?>
+                              </option>
+                            <?php endwhile; ?>
+                          <?php else: ?>
+                            <option value="1">Fasilitas</option>
+                            <option value="2">Akademik</option>
+                            <option value="3">Keamanan</option>
+                          <?php endif; ?>
+                        </select>
+                      </div>
+                      
+                      <div class="mb-3">
+                        <label for="lokasi_spesifik" class="form-label">Lokasi Spesifik</label>
+                        <input type="text" class="form-control" id="lokasi_spesifik" name="lokasi_spesifik" placeholder="Masukkan lokasi spesifik (misal: Gedung B Lantai 3 Ruang 301)" required />
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="detail_keluhan" class="form-label">Detail Keluhan</label>
+                        <textarea class="form-control" id="detail_keluhan" name="detail_keluhan" rows="4" placeholder="Tuliskan secara lengkap detail keluhan Anda di sini..." required></textarea>
+                      </div>
+                      
+                      <div class="mb-3">
+                        <label for="foto" class="form-label">Foto Pendukung</label>
+                        <input class="form-control" type="file" id="foto" name="foto_pendukung" accept="image/*" />
+                        <div class="form-text text-muted">Format file yang diperbolehkan: JPG, JPEG, PNG.</div>
+                      </div>
+                      
+                      <button type="submit" class="btn btn-primary">Kirim Pengaduan</button>
+                    </form>
+                  </div>
+                </div>
+              <?php endif; ?>
               <!--/ Form Pengaduan Card -->
             </div>
             <!-- / Content -->
