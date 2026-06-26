@@ -8,65 +8,54 @@ include 'koneksi.php';
 
 date_default_timezone_set('Asia/Jakarta');
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_kategori'])) {
-    $nama_kategori = trim(mysqli_real_escape_string($koneksi, $_POST['nama_kategori']));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_kategori'])) {
+    $nama_kategori = trim($_POST['nama_kategori'] ?? '');
     if (!empty($nama_kategori)) {
-        $cek = mysqli_query($koneksi, "SELECT * FROM Kategori WHERE nama_kategori = '$nama_kategori'");
-        if (mysqli_num_rows($cek) > 0) {
-            echo "<script>
-                    alert('Nama kategori sudah ada!');
-                    window.location.href='admin_kategori.php';
-                  </script>";
+        $nama_kategori_aman = mysqli_real_escape_string($koneksi, $nama_kategori);
+        $kueri_cek = "SELECT id_kategori FROM Kategori WHERE nama_kategori = '$nama_kategori_aman'";
+        $hasil_cek = mysqli_query($koneksi, $kueri_cek);
+
+        if ($hasil_cek && mysqli_num_rows($hasil_cek) > 0) {
+            $_SESSION['error'] = 'Nama kategori sudah ada!';
+            header('Location: admin_kategori.php');
             exit;
         }
         
-        $query = "INSERT INTO Kategori (nama_kategori) VALUES ('$nama_kategori')";
-        if (mysqli_query($koneksi, $query)) {
-            echo "<script>
-                    alert('Kategori berhasil ditambahkan!');
-                    window.location.href='admin_kategori.php';
-                  </script>";
-            exit;
+        $kueri_insert = "INSERT INTO Kategori (nama_kategori) VALUES ('$nama_kategori_aman')";
+        if (mysqli_query($koneksi, $kueri_insert)) {
+            $_SESSION['success'] = 'Kategori berhasil ditambahkan!';
         } else {
-            echo "<script>
-                    alert('Gagal menambahkan kategori: " . mysqli_real_escape_string($koneksi, mysqli_error($koneksi)) . "');
-                    window.location.href='admin_kategori.php';
-                  </script>";
-            exit;
+            $_SESSION['error'] = 'Gagal menambahkan kategori.';
         }
+        header('Location: admin_kategori.php');
+        exit;
     }
 }
 
-if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $id_kategori = mysqli_real_escape_string($koneksi, $_GET['id']);
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $id_kategori = (int) $_GET['id'];
     
-    $cek_pengaduan = mysqli_query($koneksi, "SELECT * FROM Pengaduan WHERE id_kategori = '$id_kategori'");
-    if (mysqli_num_rows($cek_pengaduan) > 0) {
-        echo "<script>
-                alert('Gagal menghapus! Kategori ini sedang digunakan oleh laporan pengaduan.');
-                window.location.href='admin_kategori.php';
-              </script>";
+    $kueri_cek = "SELECT id_pengaduan FROM Pengaduan WHERE id_kategori = $id_kategori";
+    $hasil_cek = mysqli_query($koneksi, $kueri_cek);
+
+    if ($hasil_cek && mysqli_num_rows($hasil_cek) > 0) {
+        $_SESSION['error'] = 'Gagal menghapus! Kategori ini sedang digunakan oleh laporan pengaduan.';
+        header('Location: admin_kategori.php');
         exit;
     }
     
-    $query = "DELETE FROM Kategori WHERE id_kategori = '$id_kategori'";
-    if (mysqli_query($koneksi, $query)) {
-        echo "<script>
-                alert('Kategori berhasil dihapus!');
-                window.location.href='admin_kategori.php';
-              </script>";
-        exit;
+    $kueri_delete = "DELETE FROM Kategori WHERE id_kategori = $id_kategori";
+    if (mysqli_query($koneksi, $kueri_delete)) {
+        $_SESSION['success'] = 'Kategori berhasil dihapus!';
     } else {
-        echo "<script>
-                alert('Gagal menghapus kategori: " . mysqli_real_escape_string($koneksi, mysqli_error($koneksi)) . "');
-                window.location.href='admin_kategori.php';
-              </script>";
-        exit;
+        $_SESSION['error'] = 'Gagal menghapus kategori.';
     }
+    header('Location: admin_kategori.php');
+    exit;
 }
 
-$query_kategori = "SELECT Kategori.*, AVG(Pengaduan.rating) as rata_rating FROM Kategori LEFT JOIN Pengaduan ON Kategori.id_kategori = Pengaduan.id_kategori AND Pengaduan.status = 'Resolve' GROUP BY Kategori.id_kategori";
-$result_kategori = mysqli_query($koneksi, $query_kategori);
+$kueri_list = "SELECT Kategori.*, AVG(Pengaduan.rating) as rata_rating FROM Kategori LEFT JOIN Pengaduan ON Kategori.id_kategori = Pengaduan.id_kategori AND Pengaduan.status = 'Resolve' GROUP BY Kategori.id_kategori";
+$result_kategori = mysqli_query($koneksi, $kueri_list);
 ?>
 <!doctype html>
 
@@ -145,6 +134,22 @@ $result_kategori = mysqli_query($koneksi, $query_kategori);
             <!-- Content -->
             <div class="container-xxl flex-grow-1 container-p-y">
               <h4 class="fw-bold py-3 mb-4">Kelola Master Data Kategori</h4>
+
+              <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <?php echo htmlspecialchars($_SESSION['success']); ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['success']); ?>
+              <?php endif; ?>
+
+              <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <?php echo htmlspecialchars($_SESSION['error']); ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+              <?php endif; ?>
               
               <!-- Form Tambah Kategori -->
               <div class="card mb-4">

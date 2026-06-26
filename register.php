@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!doctype html>
 
 <html lang="en" class="layout-wide customizer-hide" data-assets-path="assets/"
@@ -74,6 +77,22 @@
             <!-- /Logo -->
             <h4 class="mb-1">Registrasi Mahasiswa</h4>
             <p class="mb-6">Silakan isi data diri Anda untuk mendaftar!</p>
+
+            <?php if (isset($_SESSION['success'])): ?>
+              <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <?php echo htmlspecialchars($_SESSION['success']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+              <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <?php echo htmlspecialchars($_SESSION['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
 
             <form id="formAuthentication" class="mb-6" action="proses_register.php" method="POST">
               <div class="mb-6">

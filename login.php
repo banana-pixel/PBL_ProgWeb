@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!doctype html>
 
 <html lang="en" class="layout-wide customizer-hide" data-assets-path="assets/"
@@ -76,6 +79,22 @@
             <h4 class="mb-1">Selamat Datang!</h4>
             <p class="mb-6">Silakan login untuk mengakses layanan E-Complaint</p>
 
+            <?php if (isset($_SESSION['success'])): ?>
+              <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <?php echo htmlspecialchars($_SESSION['success']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+              <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <?php echo htmlspecialchars($_SESSION['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>
+
             <form id="formAuthentication" class="mb-6" action="proses_login.php" method="POST">
               <div class="mb-6">
                 <label for="username" class="form-label">NRP / Username Admin</label>
@@ -83,7 +102,12 @@
                   placeholder="Masukkan NRP atau Username Admin" autofocus required />
               </div>
               <div class="mb-6 form-password-toggle">
-                <label class="form-label" for="password">Password</label>
+                <div class="d-flex justify-content-between mb-1">
+                  <label class="form-label mb-0" for="password">Password</label>
+                  <a href="javascript:void(0);" onclick="alert('Fitur Lupa Kata Sandi sedang dalam pengembangan. Silakan hubungi admin IT Universitas Kristen Maranatha.');">
+                    <small>Lupa Kata Sandi?</small>
+                  </a>
+                </div>
                 <div class="input-group input-group-merge">
                   <input type="password" id="password" class="form-control" name="password"
                     placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"

@@ -7,8 +7,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
 include 'koneksi.php';
 
 $nrp = $_SESSION['nrp'];
+$nrp_aman = mysqli_real_escape_string($koneksi, $nrp);
 
-$query_mhs = mysqli_query($koneksi, "SELECT status_akademik FROM Mahasiswa WHERE nrp = '$nrp'");
+$query_mhs = mysqli_query($koneksi, "SELECT status_akademik FROM Mahasiswa WHERE nrp = '$nrp_aman'");
 $row_mhs = mysqli_fetch_assoc($query_mhs);
 $status_akademik = $row_mhs['status_akademik'] ?? 'Aktif';
 
@@ -93,6 +94,25 @@ $query_kategori = mysqli_query($koneksi, "SELECT * FROM Kategori ORDER BY nama_k
               <h4 class="fw-bold py-3 mb-0">Buat Tiket Pengaduan Baru</h4>
               <p class="text-muted mb-4">Laporkan kendala fasilitas atau pelayanan yang Anda alami.</p>
               
+              <!-- Toast Notification Container -->
+              <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+                <div id="submissionToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                  <div class="d-flex">
+                    <div class="toast-body fw-semibold" id="toastMessage">Pesan notifikasi.</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Tutup"></button>
+                  </div>
+                </div>
+              </div>
+              <!-- / Toast Notification Container -->
+
+              <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <?php echo htmlspecialchars($_SESSION['error']); ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+              <?php endif; ?>
+
               <!-- Form Pengaduan Card -->
               <?php if ($status_akademik !== 'Aktif'): ?>
                 <div class="alert alert-danger" role="alert">
@@ -102,7 +122,7 @@ $query_kategori = mysqli_query($koneksi, "SELECT * FROM Kategori ORDER BY nama_k
                 <div class="card mb-4">
                   <h5 class="card-header">Form Pengaduan Baru</h5>
                   <div class="card-body">
-                    <form action="proses_pengaduan.php" method="POST" enctype="multipart/form-data">
+                    <form id="formPengaduan" action="proses_pengaduan.php" method="POST" enctype="multipart/form-data" novalidate>
                       <div class="mb-3">
                         <label for="kategori" class="form-label">Kategori</label>
                         <select class="form-select" id="kategori" name="kategori" required>
@@ -119,6 +139,16 @@ $query_kategori = mysqli_query($koneksi, "SELECT * FROM Kategori ORDER BY nama_k
                             <option value="3">Keamanan</option>
                           <?php endif; ?>
                         </select>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="urgensi" class="form-label fw-semibold">Tingkat Urgensi</label>
+                        <select class="form-select" id="urgensi" name="urgensi" required>
+                          <option value="Rendah">Rendah (Fasilitas penunjang minor)</option>
+                          <option value="Sedang" selected>Sedang (Kendala kenyamanan/operasional umum)</option>
+                          <option value="Tinggi">Tinggi (Mendesak / Mengganggu jalannya perkuliahan & ujian)</option>
+                        </select>
+                        <div class="form-text text-muted">Pilih tingkat urgensi agar mempermudah prioritas pengerjaan oleh admin.</div>
                       </div>
                       
                       <div class="mb-3">

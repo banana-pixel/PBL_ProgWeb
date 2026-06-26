@@ -1,19 +1,21 @@
 <?php
 session_start();
 include 'koneksi.php';
+include 'helper_visual.php';
 
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
     header("Location: login.php");
     exit;
 }
 $nrp = $_SESSION['nrp'];
+$nrp_aman = mysqli_real_escape_string($koneksi, $nrp);
 
-$query = "SELECT p.*, k.nama_kategori 
+$kueri = "SELECT p.*, k.nama_kategori 
           FROM Pengaduan p 
           LEFT JOIN Kategori k ON p.id_kategori = k.id_kategori 
-          WHERE p.nrp = '$nrp' 
+          WHERE p.nrp = '$nrp_aman' 
           ORDER BY p.tanggal_lapor DESC";
-$result = mysqli_query($koneksi, $query);
+$result = mysqli_query($koneksi, $kueri);
 ?>
 <!doctype html>
 
@@ -80,6 +82,22 @@ $result = mysqli_query($koneksi, $query);
             <div class="container-xxl flex-grow-1 container-p-y">
               <h4 class="fw-bold py-3 mb-4">Riwayat Pengaduan Anda</h4>
               
+              <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <?php echo htmlspecialchars($_SESSION['success']); ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['success']); ?>
+              <?php endif; ?>
+
+              <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <?php echo htmlspecialchars($_SESSION['error']); ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+              <?php endif; ?>
+
               <!-- Tabel Riwayat Pengaduan -->
               <div class="card">
                 <h5 class="card-header">Daftar Tiket Pengaduan</h5>
@@ -99,32 +117,39 @@ $result = mysqli_query($koneksi, $query);
                         <?php while ($row = mysqli_fetch_assoc($result)): ?>
                           <?php
                             $status = $row['status'];
-                            $badge_class = 'bg-label-secondary';
-                            if (strcasecmp($status, 'pending') == 0) {
-                                $badge_class = 'bg-label-danger';
-                            } elseif (strcasecmp($status, 'on progress') == 0) {
-                                $badge_class = 'bg-label-warning';
-                            } elseif (strcasecmp($status, 'resolve') == 0) {
-                                $badge_class = 'bg-label-success';
-                            } elseif (strcasecmp($status, 'dibatalkan') == 0) {
-                                $badge_class = 'bg-label-secondary';
-                            }
+                            $status_info = get_status_info($status);
                           ?>
                           <tr>
                             <td><strong><?php echo htmlspecialchars($row['id_pengaduan']); ?></strong></td>
                             <td><?php echo date('d-m-Y H:i', strtotime($row['tanggal_lapor'])); ?></td>
                             <td><?php echo htmlspecialchars($row['nama_kategori'] ?? 'Lain-lain'); ?></td>
                             <td>
-                              <span class="badge <?php echo $badge_class; ?>">
-                                <?php echo htmlspecialchars($row['status']); ?>
+                              <span class="badge <?php echo $status_info['class']; ?>">
+                                <?php echo htmlspecialchars($status_info['label']); ?>
                               </span>
                             </td>
                             <td>
-                              <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
-                                <i class="bx bx-time-five me-1"></i> Lacak Tiket
-                              </button>
+                              <?php if (strcasecmp($status, 'resolve') == 0): ?>
+                                <?php if (is_null($row['rating'])): ?>
+                                  <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
+                                    <i class="bx bx-star me-1"></i> Beri Ulasan
+                                  </button>
+                                <?php else: ?>
+                                  <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
+                                    <i class="bx bx-comment-detail me-1"></i> Detail & Ulasan
+                                  </button>
+                                <?php endif; ?>
+                              <?php elseif (strcasecmp($status, 'ditolak') == 0): ?>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
+                                  <i class="bx bx-info-circle me-1"></i> Lihat Alasan
+                                </button>
+                              <?php else: ?>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetail<?php echo $row['id_pengaduan']; ?>">
+                                  <i class="bx bx-time-five me-1"></i> Lacak Tiket
+                                </button>
+                              <?php endif; ?>
                               <?php if (strcasecmp($status, 'pending') == 0): ?>
-                                <a href="proses_batal.php?id=<?php echo urlencode($row['id_pengaduan']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin membatalkan laporan ini?')">
+                                <a href="proses_batal.php?id=<?php echo urlencode($row['id_pengaduan']); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Yakin ingin membatalkan laporan ini?')">
                                   Batalkan
                                 </a>
                               <?php endif; ?>
@@ -145,6 +170,20 @@ $result = mysqli_query($koneksi, $query);
                                       <div class="mb-4">
                                         <h6 class="fw-semibold mb-1">Lokasi Spesifik:</h6>
                                         <p class="text-muted mb-2"><?php echo htmlspecialchars($row['lokasi_spesifik']); ?></p>
+                                        
+                                        <h6 class="fw-semibold mb-1">Tingkat Urgensi:</h6>
+                                        <p class="mb-2">
+                                          <?php
+                                            $urg = $row['urgensi'] ?? 'Sedang';
+                                            $urg_class = 'bg-label-warning';
+                                            if ($urg === 'Tinggi') {
+                                                $urg_class = 'bg-label-danger';
+                                            } elseif ($urg === 'Rendah') {
+                                                $urg_class = 'bg-label-info';
+                                            }
+                                          ?>
+                                          <span class="badge <?php echo $urg_class; ?>"><?php echo htmlspecialchars($urg); ?></span>
+                                        </p>
                                         
                                         <h6 class="fw-semibold mb-1">Detail Keluhan:</h6>
                                         <p class="text-muted mb-2"><?php echo nl2br(htmlspecialchars($row['detail_keluhan'])); ?></p>
@@ -170,7 +209,7 @@ $result = mysqli_query($koneksi, $query);
                                           <!-- Bullet point -->
                                           <div class="position-absolute" style="left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background-color: #696cff;"></div>
                                           <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold text-primary">Laporan Masuk (Pending)</span>
+                                            <span class="fw-bold text-primary">Laporan Diajukan</span>
                                             <small class="text-muted"><?php echo date('d M Y H:i', strtotime($row['tanggal_lapor'])); ?></small>
                                           </div>
                                           <p class="text-muted small mb-0">Pengaduan Anda telah terkirim dan masuk antrean sistem.</p>
@@ -185,7 +224,7 @@ $result = mysqli_query($koneksi, $query);
                                           <!-- Bullet point -->
                                           <div class="position-absolute" style="left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background-color: <?php echo $color_progress; ?>;"></div>
                                           <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold <?php echo $is_on_progress ? 'text-warning' : 'text-muted'; ?>">Sedang Ditangani Admin</span>
+                                            <span class="fw-bold <?php echo $is_on_progress ? 'text-warning' : 'text-muted'; ?>">Laporan Diproses</span>
                                             <small class="text-muted"><?php echo $is_on_progress ? date('d M Y H:i', strtotime($row['waktu_on_progress'])) : '-'; ?></small>
                                           </div>
                                           <p class="text-muted small mb-0">Laporan disetujui dan saat ini sedang ditindaklanjuti oleh admin/dekanat.</p>
@@ -194,13 +233,13 @@ $result = mysqli_query($koneksi, $query);
                                         <!-- Node 3: Selesai -->
                                         <div class="position-relative">
                                           <?php 
-                                          $is_resolve = !is_null($row['waktu_resolve']); 
+                                          $is_resolve = (strcasecmp($status, 'resolve') == 0) && !is_null($row['waktu_resolve']); 
                                           $color_resolve = $is_resolve ? '#71dd37' : '#d9dee3';
                                           ?>
                                           <!-- Bullet point -->
                                           <div class="position-absolute" style="left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background-color: <?php echo $color_resolve; ?>;"></div>
                                           <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold <?php echo $is_resolve ? 'text-success' : 'text-muted'; ?>">Laporan Selesai (Resolve)</span>
+                                            <span class="fw-bold <?php echo $is_resolve ? 'text-success' : 'text-muted'; ?>">Laporan Selesai</span>
                                             <small class="text-muted"><?php echo $is_resolve ? date('d M Y H:i', strtotime($row['waktu_resolve'])) : '-'; ?></small>
                                           </div>
                                           <p class="text-muted small mb-2">Pekerjaan selesai dilakukan.</p>
@@ -209,9 +248,35 @@ $result = mysqli_query($koneksi, $query);
                                             <div class="alert alert-success py-2 px-3 mb-0 small mt-1">
                                               <strong>Tanggapan Admin:</strong><br/>
                                               <?php echo nl2br(htmlspecialchars($row['tanggapan_admin'])); ?>
+                                              
+                                              <?php if (!empty($row['foto_bukti_selesai'])): ?>
+                                                <div class="mt-2 border-top pt-2">
+                                                  <strong>Bukti Penanganan:</strong><br/>
+                                                  <a href="uploads/<?php echo htmlspecialchars($row['foto_bukti_selesai']); ?>" target="_blank">
+                                                    <img src="uploads/<?php echo htmlspecialchars($row['foto_bukti_selesai']); ?>" class="img-fluid rounded mt-1" style="max-height: 180px;" alt="Bukti Penanganan" />
+                                                  </a>
+                                                </div>
+                                              <?php endif; ?>
                                             </div>
                                           <?php endif; ?>
                                         </div>
+
+                                        <?php if (strcasecmp($status, 'ditolak') == 0): ?>
+                                          <hr class="my-3" />
+                                          <div class="alert alert-danger py-3 px-3 mb-0">
+                                            <div class="d-flex align-items-start gap-2">
+                                              <i class="bx bx-x-circle fs-5 text-danger flex-shrink-0 mt-1"></i>
+                                              <div>
+                                                <strong class="d-block mb-1">Laporan Ditolak oleh Admin</strong>
+                                                <?php if (!empty($row['tanggapan_admin'])): ?>
+                                                  <span class="small"><strong>Alasan:</strong> <?php echo nl2br(htmlspecialchars($row['tanggapan_admin'])); ?></span>
+                                                <?php else: ?>
+                                                  <span class="small text-muted">Tidak ada alasan yang dicantumkan.</span>
+                                                <?php endif; ?>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        <?php endif; ?>
                                         
                                       </div>
 
